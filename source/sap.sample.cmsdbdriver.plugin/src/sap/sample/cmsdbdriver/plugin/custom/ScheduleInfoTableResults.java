@@ -26,6 +26,7 @@ import sap.sample.cmsdbdriver.plugin.core.IResultPlugin;
 import sap.sample.cmsdbdriver.plugin.core.IResultTable;
 import sap.sample.cmsdbdriver.plugin.core.PluginBase;
 
+@SuppressWarnings("unused")
 public class ScheduleInfoTableResults extends IResultTable implements IUnvTable {
 
 	private static final String TABLE_NAME = "ScheduleInfo";
@@ -139,6 +140,7 @@ public class ScheduleInfoTableResults extends IResultTable implements IUnvTable 
 	
 	private void setValues(int id, String text, IProperties properties, int level, String path) throws CMSDBDriverException {
 		String s = "";
+		@SuppressWarnings("unchecked")
 		Set<Integer> keys = properties.keySet();
 		for (int key : keys) {
 			if (getCustomObject() == null) setCustomObject(new CustomObject());

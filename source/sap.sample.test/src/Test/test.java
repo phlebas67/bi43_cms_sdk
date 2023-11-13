@@ -18,6 +18,7 @@ import com.crystaldecisions.sdk.plugin.authentication.enterprise.IsecEnterpriseB
 import com.crystaldecisions.sdk.properties.IProperties;
 import com.crystaldecisions.sdk.properties.IProperty;
 
+@SuppressWarnings("unused")
 class test {
 
     private static String USER = "administrator";
@@ -29,8 +30,7 @@ class test {
     private static IEnterpriseSession eSession = null;
     private IInfoStore infoStore;
 
-	@Test
-	void test() throws SDKException {
+	test() throws SDKException {
 		sessionMgr = CrystalEnterprise.getSessionMgr();
 		eSession = sessionMgr.logon(USER, PASSWORD, CMS, IsecEnterpriseBase.PROGID);
 		infoStore = (IInfoStore)eSession.getService("InfoStore");
@@ -38,8 +38,10 @@ class test {
 		eSession.logoff();
 	}
 	
+	@SuppressWarnings("unused")
 	private void workOn(IProperties properties, int level, String path) {
 		String s = "";
+		@SuppressWarnings("unchecked")
 		Set<Integer> keys = properties.keySet();
 		for (int key : keys) {
 			IProperty prop = properties.getProperty(key);
@@ -59,6 +61,7 @@ class test {
 
 	private void query(int id, String field) throws SDKException {
 		
+		@SuppressWarnings("unused")
 		String[] condFields = field.split(" ");
 		field = field.trim().replaceAll("'", "").replaceAll("\\s+", ",");
 		
@@ -71,6 +74,7 @@ class test {
 		//IProperties properties = infoObject.properties().getProperties(CePropertyID.SI_DESTINATIONS);
 		
 		//properties = properties.getProperties("si_destinations");
+		@SuppressWarnings("unused")
 		String s = "";
 		outProperties("query", infoObject.properties());
 		IProperty prop = infoObject.properties().getProperty("si_scheduleInfo");
@@ -111,6 +115,7 @@ class test {
 	
 	private void outProperties(String text, IProperties properties) {
 		System.out.println("---> " + text);
+		@SuppressWarnings("unchecked")
 		Set<Integer> keys = properties.keySet();
 		for (int key : keys) {
 			System.out.println(CePropertyID.idToName(key));

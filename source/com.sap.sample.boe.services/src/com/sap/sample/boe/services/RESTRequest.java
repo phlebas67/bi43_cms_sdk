@@ -190,7 +190,8 @@ public class RESTRequest {
         	if (in == null)
         		throw new Exception("Connection to " + url + " failed");
 
-        	Scanner scanner = new Scanner(in, "UTF-8").useDelimiter("\\A");
+        	@SuppressWarnings("resource")
+			Scanner scanner = new Scanner(in, "UTF-8").useDelimiter("\\A");
         	responseContent = scanner.hasNext() ? scanner.next() : "";
         	responseHeaders = connection.getHeaderFields();
             responseCode = connection.getResponseCode();

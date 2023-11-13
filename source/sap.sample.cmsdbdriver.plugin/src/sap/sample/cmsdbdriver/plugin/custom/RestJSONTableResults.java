@@ -79,6 +79,7 @@ public class RestJSONTableResults extends IResultTable implements IUnvTable {
 		//int i = queryElement.getColumns().size();
 		for (int i=0; i<queryElement.getColumns().size(); i++) {
 			ColumnDefinition cDef = queryElement.getColumns().get(i);
+			@SuppressWarnings("unused")
 			String s = cDef.getColumnName();  // REST_DP
 		}
 		rest_call = queryElement.getCondition().operands().get(1).toString();

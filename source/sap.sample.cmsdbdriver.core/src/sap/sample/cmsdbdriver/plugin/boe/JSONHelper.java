@@ -31,6 +31,7 @@ public class JSONHelper {
 	 * @throws CMSDBDriverException
 	 */
 	private void iterate(int level, JSONObject oJSON, String path, String filterPath, boolean useAsFilter) throws JSONException, CMSDBDriverException {
+		@SuppressWarnings("unchecked")
 		Iterator<String> keysItr = oJSON.keys();
 		while (keysItr.hasNext()) {
 			String key = keysItr.next();
