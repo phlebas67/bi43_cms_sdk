@@ -62,7 +62,7 @@ public class TemplateTableResults extends IResultTable implements IUnvTable {
 		setObjectProperty(TABLE_NAME + "." + TemplateTableResults.NO,
 				Integer.class.getName(), id);
 		setObjectProperty(TABLE_NAME + "." + TemplateTableResults.TEXT,
-				String.class.getName(), id + ": text");
+				String.class.getName(), id + ": Colin's new text");
 		addRow(id);
 	}
 
