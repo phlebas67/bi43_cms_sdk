@@ -7,17 +7,15 @@ import java.util.Set;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.List;
 
-import com.crystaldecisions.sdk.exception.SDKException;
+import com.crystaldecisions.sdk.occa.infostore.CePropertyID;
 import com.crystaldecisions.sdk.occa.infostore.IDestination;
-import com.crystaldecisions.sdk.occa.infostore.IDestinationPlugin;
 import com.crystaldecisions.sdk.occa.infostore.IDestinations;
 import com.crystaldecisions.sdk.occa.infostore.IInfoObject;
 import com.crystaldecisions.sdk.occa.infostore.IInfoObjects;
 import com.crystaldecisions.sdk.occa.infostore.ISchedulingInfo;
-import com.crystaldecisions.sdk.plugin.destination.smtp.ISMTP;
-import com.crystaldecisions.sdk.plugin.destination.smtp.ISMTPOptions;
+import com.crystaldecisions.sdk.properties.IProperties;
+import com.crystaldecisions.sdk.properties.IProperty;
 import com.sap.connectivity.cs.java.drivers.cms.CMSDBDriverException;
 import com.sap.connectivity.cs.java.drivers.cms.api.IQueryElement;
 import com.sap.connectivity.cs.java.drivers.sdk.datafoundation.IUnvTable;
@@ -87,13 +85,13 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 		writeDebug("In setValues with id: " + id);
 		
 		//Process the CMS query
-		//processQuery(id);
+		String OutputFile =	processQuery(id);
 		
 				
 		setObjectProperty(TABLE_NAME + "." + FileScheduleDestinations.NO,
 				Integer.class.getName(), id);
 		setObjectProperty(TABLE_NAME + "." + FileScheduleDestinations.TEXT,
-				String.class.getName(), id + ": In FileScheduleDestinations Table");
+				String.class.getName(), OutputFile);
 		addRow(id);
 		
 		writeDebug("Exiting setValues");	
@@ -111,7 +109,10 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 	}
 	
 	@SuppressWarnings("rawtypes")
-	private void processQuery(int id){
+	private String processQuery(int id){
+		//Initialise Return Variable
+		String OutputFile = "";
+		
 		writeDebug("In processQuery()");
 		
 		writeDebug("About to execute CMS query: SELECT SI_NAME, SI_ID, SI_SCHEDULEINFO FROM CI_INFOOBJECTS where si_id = " + id);
@@ -119,14 +120,14 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 		
 		if (infoObjects == null) {
 			writeDebug("infoObjects query returned null");
-			return;
+			return OutputFile;
 		}
 		
 		int recordCount = infoObjects.size();
 		
 		if (recordCount == 0) {
 			writeDebug("infoObjects query returned 0 records");
-			return;
+			return OutputFile;
 		}
 		else
 			writeDebug("infoObjects query returned " + recordCount + " records");
@@ -148,7 +149,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 			IDestinations dests = sInfo.getDestinations();
 			writeDebug(dests.size() +" Destinations retrieved");
 			
-			String pluginType = "CrystalEnterprise.Smtp";
+			String pluginType = "CrystalEnterprise.DiskUnmanaged";
 			Iterator destIter = dests.iterator();
 			
 			IDestination dest=null;
@@ -168,34 +169,59 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 			}
 			
 			if (dest.getName().equals(pluginType)) {
-				writeDebug("In Processing SMTP destination block");
+				writeDebug("In Processing DiskUnManaged destination block");
+				writeDebug("About to query properties");
+				writeDebug("IProperties properties = dest.properties();");
+				IProperties properties = dest.properties();
 				
-				IInfoObjects smtpInfoObjects = pluginBase.getConnection().queryCMS("Select SI_DEST_SCHEDULEOPTIONS, SI_PROGID From CI_SYSTEMOBJECTS Where SI_NAME = 'CrystalEnterprise.Smtp'");
-				writeDebug("Run SMTP Plugin query");
+				writeDebug("About to get size of properties");
+				writeDebug("Properties size = " + properties.size());
 				
-				IInfoObject smtpinfoObject = (IInfoObject)smtpInfoObjects.get(0);
-				writeDebug("Set smtpinfoObject");
-				
-				IDestinationPlugin destinationPlugin = (IDestinationPlugin)smtpinfoObject;
-				writeDebug("Set destinationPlugin");
-				
-				ISMTP smtp = (ISMTP)destinationPlugin;
-				writeDebug("Set smtp");
-				
-				ISMTPOptions smtpOptions = (ISMTPOptions)smtp.getScheduleOptions();
-				writeDebug("Retrieved smtpOptions");
-				
-				try {
-					List toAddresses = smtpOptions.getToAddresses();
-					writeDebug("Number of Addresses found: " +toAddresses.size());
-					
-				} catch (SDKException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				writeDebug("About to run IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);");
+				IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);
+				if ( scheduleOptions== null)
+				{
+					writeDebug("No property with name SI_DEST_SCHEDULEOPTIONS exists");
+					break;
 				}
-
 				
-
+				IProperties scheduleOptionsProperties=(IProperties)properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS).getValue();
+				if (scheduleOptionsProperties == null)
+				{
+					writeDebug("Couldn't retrieve properties of SI_DEST_SCHEDULEOPTIONS");
+					break;					
+				}
+				//Retrieve SI_OUTPUT_FILES property
+				writeDebug("About to execute IProperty outputFilesProperty = scheduleOptionsProperties.getProperty(CePropertyID.SI_OUTPUT_FILES_PER_DOC);");
+				IProperty outputFilesProperty = scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES");
+				if (outputFilesProperty == null)
+				{
+					writeDebug("Couldn't retrieve the SI_OUTPUT_FILES property");
+					break;
+				}
+				
+				//Retrieve Properties of SI_OUTPUT_FILES
+				writeDebug("About to execute IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty(\"SI_OUTPUT_FILES\").getValue();");
+				IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES").getValue();
+				if (outputFilesProperties == null)
+				{
+					writeDebug("Couldn't retrieve properties of SI_OUTPUT_FILES");
+					break;					
+				}
+				//Retrieve Filename
+				writeDebug("About to retrieve filename (1) property");
+				IProperty filenameProperty = outputFilesProperties.getProperty("1");
+				if (filenameProperty == null)
+				{
+					writeDebug("Couldn't retrieve (1) property");
+					break;
+				}
+				else
+				{
+					OutputFile = filenameProperty.getValue().toString();
+					writeDebug("Filepath = "+OutputFile);
+				}
+				
 			}
 			
 			
@@ -203,6 +229,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 		}
 
 		writeDebug("Exiting processQuery()"+"\r\n");
+		return OutputFile;
 	}
 }	
 
