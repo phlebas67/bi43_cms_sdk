@@ -29,8 +29,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 
 	private static final String TABLE_NAME = "FileScheduleDestination";
 
-	private static final String NO = "no";
-	private static final String TEXT = "text";
+	private static final String OUTPUTFILEPATH = "OutputFilePath";
 	
 	FileWriter fw;
 	final private PluginBase pluginBase;
@@ -42,8 +41,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 	 */
 	public FileScheduleDestinations(IResultPlugin plugin) {
 		super(plugin);
-		columns.put(NO, new UnvTableFieldDef(NO, Types.INTEGER));
-		columns.put(TEXT, new UnvTableFieldDef(TEXT, Types.VARCHAR));
+		columns.put(OUTPUTFILEPATH, new UnvTableFieldDef(OUTPUTFILEPATH, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
 	
@@ -88,9 +86,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 		String OutputFile =	processQuery(id);
 		
 				
-		setObjectProperty(TABLE_NAME + "." + FileScheduleDestinations.NO,
-				Integer.class.getName(), id);
-		setObjectProperty(TABLE_NAME + "." + FileScheduleDestinations.TEXT,
+		setObjectProperty(TABLE_NAME + "." + FileScheduleDestinations.OUTPUTFILEPATH,
 				String.class.getName(), OutputFile);
 		addRow(id);
 		
@@ -110,7 +106,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 	
 	@SuppressWarnings("rawtypes")
 	private String processQuery(int id){
-		//Initialise Return Variable
+		//Initialize Return Variable
 		String OutputFile = "";
 		
 		writeDebug("In processQuery()");
