@@ -69,19 +69,18 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 	 */
 	public void initialize(IQueryElement queryElement, Set<Integer> ids) {
 		// 
-		
+		/*
 		try {
 			fw = new FileWriter("C:\\Temp\\debug.txt");
 		} catch (IOException e2) {
 			e2.printStackTrace();
 		}
-
+*/
 	}
 
 	@Override
 	public void setValues(int id) throws CMSDBDriverException {
-		writeDebug("In setValues with id: " + id);
-		
+			
 		//Process the CMS query
 		String OutputFile =	processQuery(id);
 		
@@ -90,9 +89,10 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 				String.class.getName(), OutputFile);
 		addRow(id);
 		
-		writeDebug("Exiting setValues");	
+			
 	}
 
+	@SuppressWarnings("unused")
 	private void writeDebug(String debugstr) {
 		try {
 			fw.write(debugstr);
@@ -109,122 +109,91 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 		//Initialize Return Variable
 		String OutputFile = "";
 		
-		writeDebug("In processQuery()");
 		
-		writeDebug("About to execute CMS query: SELECT SI_NAME, SI_ID, SI_SCHEDULEINFO FROM CI_INFOOBJECTS where si_id = " + id);
 		IInfoObjects infoObjects = pluginBase.getConnection().queryCMS("SELECT SI_NAME, SI_ID, SI_SCHEDULEINFO FROM CI_INFOOBJECTS where si_id = " + id);
 		
 		if (infoObjects == null) {
-			writeDebug("infoObjects query returned null");
 			return OutputFile;
 		}
 		
 		int recordCount = infoObjects.size();
 		
 		if (recordCount == 0) {
-			writeDebug("infoObjects query returned 0 records");
 			return OutputFile;
 		}
-		else
-			writeDebug("infoObjects query returned " + recordCount + " records");
 		
-		writeDebug("Retrieving infoObject..");
 		Iterator infoObjectsIter = infoObjects.iterator();
 		
 		while (infoObjectsIter.hasNext()) {
-			writeDebug("In infoObject iterator");
 			
 			IInfoObject infoObject = (IInfoObject)infoObjectsIter.next();
-			writeDebug("..infoObject retrieved "+ infoObject.getTitle());
 			
-			writeDebug("Retrieving SchedulingInfo..");
 			ISchedulingInfo sInfo = infoObject.getSchedulingInfo();
-			writeDebug("..SchedulingInfo retrieved");
 			
-			writeDebug("Retrieving Destinations..");
 			IDestinations dests = sInfo.getDestinations();
-			writeDebug(dests.size() +" Destinations retrieved");
 			
 			String pluginType = "CrystalEnterprise.DiskUnmanaged";
 			Iterator destIter = dests.iterator();
 			
 			IDestination dest=null;
 			while (destIter.hasNext()) {
-				writeDebug("In Destinations iterator");
-				
 				
 				dest = (IDestination) destIter.next();
-				writeDebug("Destination Name: " + dest.getName());
 				if (pluginType.equals(dest.getName()))
 				{
-					writeDebug("Found a destination with type " +pluginType.toString()+" so breaking out of while loop");
 					break;
 				}
 
-				writeDebug("Exiting Destinations iterator without finding destination type "+pluginType.toString());
+			}
+			
+			if (dest == null)
+			{
+				return OutputFile;
 			}
 			
 			if (dest.getName().equals(pluginType)) {
-				writeDebug("In Processing DiskUnManaged destination block");
-				writeDebug("About to query properties");
-				writeDebug("IProperties properties = dest.properties();");
 				IProperties properties = dest.properties();
 				
-				writeDebug("About to get size of properties");
-				writeDebug("Properties size = " + properties.size());
-				
-				writeDebug("About to run IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);");
 				IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);
 				if ( scheduleOptions== null)
 				{
-					writeDebug("No property with name SI_DEST_SCHEDULEOPTIONS exists");
 					break;
 				}
 				
 				IProperties scheduleOptionsProperties=(IProperties)properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS).getValue();
 				if (scheduleOptionsProperties == null)
 				{
-					writeDebug("Couldn't retrieve properties of SI_DEST_SCHEDULEOPTIONS");
 					break;					
 				}
 				//Retrieve SI_OUTPUT_FILES property
-				writeDebug("About to execute IProperty outputFilesProperty = scheduleOptionsProperties.getProperty(CePropertyID.SI_OUTPUT_FILES_PER_DOC);");
 				IProperty outputFilesProperty = scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES");
 				if (outputFilesProperty == null)
 				{
-					writeDebug("Couldn't retrieve the SI_OUTPUT_FILES property");
 					break;
 				}
 				
 				//Retrieve Properties of SI_OUTPUT_FILES
-				writeDebug("About to execute IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty(\"SI_OUTPUT_FILES\").getValue();");
 				IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES").getValue();
 				if (outputFilesProperties == null)
 				{
-					writeDebug("Couldn't retrieve properties of SI_OUTPUT_FILES");
 					break;					
 				}
 				//Retrieve Filename
-				writeDebug("About to retrieve filename (1) property");
 				IProperty filenameProperty = outputFilesProperties.getProperty("1");
 				if (filenameProperty == null)
 				{
-					writeDebug("Couldn't retrieve (1) property");
 					break;
 				}
 				else
 				{
 					OutputFile = filenameProperty.getValue().toString();
-					writeDebug("Filepath = "+OutputFile);
 				}
 				
 			}
 			
 			
-			writeDebug("Exiting infoObject iterator");
 		}
 
-		writeDebug("Exiting processQuery()"+"\r\n");
 		return OutputFile;
 	}
 }	
