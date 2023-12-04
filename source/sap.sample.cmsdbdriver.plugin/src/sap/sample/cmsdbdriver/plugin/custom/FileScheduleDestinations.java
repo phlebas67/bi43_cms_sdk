@@ -163,62 +163,70 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 
 				writeDebug("Exiting Destinations iterator without finding destination type "+pluginType.toString());
 			}
-			
-			if (dest.getName().equals(pluginType)) {
-				writeDebug("In Processing DiskUnManaged destination block");
-				writeDebug("About to query properties");
-				writeDebug("IProperties properties = dest.properties();");
-				IProperties properties = dest.properties();
-				
-				writeDebug("About to get size of properties");
-				writeDebug("Properties size = " + properties.size());
-				
-				writeDebug("About to run IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);");
-				IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);
-				if ( scheduleOptions== null)
-				{
-					writeDebug("No property with name SI_DEST_SCHEDULEOPTIONS exists");
-					break;
+			try {
+				if (dest.getName().equals(pluginType)) {
+					if (dest.getName().equals(pluginType)) {
+						writeDebug("In Processing DiskUnManaged destination block");
+						writeDebug("About to query properties");
+						writeDebug("IProperties properties = dest.properties();");
+						IProperties properties = dest.properties();
+						
+						writeDebug("About to get size of properties");
+						writeDebug("Properties size = " + properties.size());
+						
+						writeDebug("About to run IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);");
+						IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);
+						if ( scheduleOptions== null)
+						{
+							writeDebug("No property with name SI_DEST_SCHEDULEOPTIONS exists");
+							break;
+						}
+						
+						IProperties scheduleOptionsProperties=(IProperties)properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS).getValue();
+						if (scheduleOptionsProperties == null)
+						{
+							writeDebug("Couldn't retrieve properties of SI_DEST_SCHEDULEOPTIONS");
+							break;					
+						}
+						//Retrieve SI_OUTPUT_FILES property
+						writeDebug("About to execute IProperty outputFilesProperty = scheduleOptionsProperties.getProperty(CePropertyID.SI_OUTPUT_FILES_PER_DOC);");
+						IProperty outputFilesProperty = scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES");
+						if (outputFilesProperty == null)
+						{
+							writeDebug("Couldn't retrieve the SI_OUTPUT_FILES property");
+							break;
+						}
+						
+						//Retrieve Properties of SI_OUTPUT_FILES
+						writeDebug("About to execute IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty(\"SI_OUTPUT_FILES\").getValue();");
+						IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES").getValue();
+						if (outputFilesProperties == null)
+						{
+							writeDebug("Couldn't retrieve properties of SI_OUTPUT_FILES");
+							break;					
+						}
+						//Retrieve Filename
+						writeDebug("About to retrieve filename (1) property");
+						IProperty filenameProperty = outputFilesProperties.getProperty("1");
+						if (filenameProperty == null)
+						{
+							writeDebug("Couldn't retrieve (1) property");
+							break;
+						}
+						else
+						{
+							OutputFile = filenameProperty.getValue().toString();
+							writeDebug("Filepath = "+OutputFile);
+						}
+						
+					}
 				}
-				
-				IProperties scheduleOptionsProperties=(IProperties)properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS).getValue();
-				if (scheduleOptionsProperties == null)
-				{
-					writeDebug("Couldn't retrieve properties of SI_DEST_SCHEDULEOPTIONS");
-					break;					
-				}
-				//Retrieve SI_OUTPUT_FILES property
-				writeDebug("About to execute IProperty outputFilesProperty = scheduleOptionsProperties.getProperty(CePropertyID.SI_OUTPUT_FILES_PER_DOC);");
-				IProperty outputFilesProperty = scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES");
-				if (outputFilesProperty == null)
-				{
-					writeDebug("Couldn't retrieve the SI_OUTPUT_FILES property");
-					break;
-				}
-				
-				//Retrieve Properties of SI_OUTPUT_FILES
-				writeDebug("About to execute IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty(\"SI_OUTPUT_FILES\").getValue();");
-				IProperties outputFilesProperties = (IProperties)scheduleOptionsProperties.getProperty("SI_OUTPUT_FILES").getValue();
-				if (outputFilesProperties == null)
-				{
-					writeDebug("Couldn't retrieve properties of SI_OUTPUT_FILES");
-					break;					
-				}
-				//Retrieve Filename
-				writeDebug("About to retrieve filename (1) property");
-				IProperty filenameProperty = outputFilesProperties.getProperty("1");
-				if (filenameProperty == null)
-				{
-					writeDebug("Couldn't retrieve (1) property");
-					break;
-				}
-				else
-				{
-					OutputFile = filenameProperty.getValue().toString();
-					writeDebug("Filepath = "+OutputFile);
-				}
-				
 			}
+			catch (Exception e) {
+				writeDebug("In Catch with error: "+e+"\r\n");
+				return OutputFile;
+			}
+
 			
 			
 			writeDebug("Exiting infoObject iterator");
