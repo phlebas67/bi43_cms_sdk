@@ -25,12 +25,13 @@ import sap.sample.cmsdbdriver.plugin.core.IResultPlugin;
 import sap.sample.cmsdbdriver.plugin.core.IResultTable;
 import sap.sample.cmsdbdriver.plugin.core.PluginBase;
 
+
 public class FileScheduleDestinations extends IResultTable implements IUnvTable {
 
 	private static final String TABLE_NAME = "FileScheduleDestination";
-
 	private static final String OUTPUTFILEPATH = "OutputFilePath";
-	
+    private final static boolean DEBUGMODE=false;
+    
 	FileWriter fw;
 	final private PluginBase pluginBase;
 	
@@ -70,12 +71,14 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 	public void initialize(IQueryElement queryElement, Set<Integer> ids) {
 		// 
 		
-		try {
-			fw = new FileWriter("C:\\Temp\\debug.txt");
-		} catch (IOException e2) {
-			e2.printStackTrace();
+		if (DEBUGMODE)
+		{
+			try {
+				fw = new FileWriter("C:\\Temp\\debug.txt");
+			} catch (IOException e2) {
+				e2.printStackTrace();
+			}
 		}
-
 	}
 
 	@Override
@@ -94,14 +97,16 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 	}
 
 	private void writeDebug(String debugstr) {
-		try {
-			fw.write(debugstr);
-			fw.write("\r\n");
-			fw.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (DEBUGMODE)
+		{
+			try {
+				fw.write(debugstr);
+				fw.write("\r\n");
+				fw.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-		
 	}
 	
 	@SuppressWarnings("rawtypes")
