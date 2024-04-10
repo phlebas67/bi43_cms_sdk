@@ -19,7 +19,7 @@ public class Plugin implements IPlugin {
      */
     public Plugin(final CMSDriverConnection connection) {  
     	pluginBase = new PluginBase(connection);
-    	pluginBase.addTable(new FileScheduleDestinations(pluginBase));
+    	pluginBase.addTable(new ComsetExtensions(pluginBase));
     }
 
 	@Override

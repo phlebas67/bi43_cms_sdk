@@ -26,7 +26,7 @@ import sap.sample.cmsdbdriver.plugin.core.IResultTable;
 import sap.sample.cmsdbdriver.plugin.core.PluginBase;
 
 
-public class FileScheduleDestinations extends IResultTable implements IUnvTable {
+public class ComsetExtensions extends IResultTable implements IUnvTable {
 
 	private static final String TABLE_NAME = "FileScheduleDestination";
 	private static final String OUTPUTFILEPATH = "OutputFilePath";
@@ -40,7 +40,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 	/**
 	 * Define the list of Fields for the virtual table
 	 */
-	public FileScheduleDestinations(IResultPlugin plugin) {
+	public ComsetExtensions(IResultPlugin plugin) {
 		super(plugin);
 		columns.put(OUTPUTFILEPATH, new UnvTableFieldDef(OUTPUTFILEPATH, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
@@ -89,7 +89,7 @@ public class FileScheduleDestinations extends IResultTable implements IUnvTable 
 		String OutputFile =	processQuery(id);
 		
 				
-		setObjectProperty(TABLE_NAME + "." + FileScheduleDestinations.OUTPUTFILEPATH,
+		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.OUTPUTFILEPATH,
 				String.class.getName(), OutputFile);
 		addRow(id);
 		
