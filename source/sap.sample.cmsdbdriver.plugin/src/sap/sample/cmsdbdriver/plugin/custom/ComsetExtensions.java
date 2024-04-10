@@ -28,9 +28,9 @@ import sap.sample.cmsdbdriver.plugin.core.PluginBase;
 
 public class ComsetExtensions extends IResultTable implements IUnvTable {
 
-	private static final String TABLE_NAME = "FileScheduleDestination";
-	private static final String OUTPUTFILEPATH = "OutputFilePath";
-    private final static boolean DEBUGMODE=false;
+	private static final String TABLE_NAME = "ComsetExtensions";
+	private static final String SCHEDULEDFILEDESTINATION = "ScheduledFileDestination";
+    private final static boolean DEBUGMODE=true;
     
 	FileWriter fw;
 	final private PluginBase pluginBase;
@@ -42,7 +42,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	 */
 	public ComsetExtensions(IResultPlugin plugin) {
 		super(plugin);
-		columns.put(OUTPUTFILEPATH, new UnvTableFieldDef(OUTPUTFILEPATH, Types.VARCHAR));
+		columns.put(SCHEDULEDFILEDESTINATION, new UnvTableFieldDef(SCHEDULEDFILEDESTINATION, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
 	
@@ -74,7 +74,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		if (DEBUGMODE)
 		{
 			try {
-				fw = new FileWriter("C:\\Temp\\debug.txt");
+				fw = new FileWriter("C:\\Temp\\comsetextensions_debug.txt");
 			} catch (IOException e2) {
 				e2.printStackTrace();
 			}
@@ -89,7 +89,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		String OutputFile =	processQuery(id);
 		
 				
-		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.OUTPUTFILEPATH,
+		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.SCHEDULEDFILEDESTINATION,
 				String.class.getName(), OutputFile);
 		addRow(id);
 		
