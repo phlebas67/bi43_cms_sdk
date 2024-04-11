@@ -30,6 +30,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 
 	private static final String TABLE_NAME = "ComsetExtensions";
 	private static final String SCHEDULEDFILEDESTINATION = "ScheduledFileDestination";
+	private static final String EMAILRECIPIENTS = "EmailRecipients";
     private final static boolean DEBUGMODE=true;
     
 	FileWriter fw;
@@ -43,6 +44,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	public ComsetExtensions(IResultPlugin plugin) {
 		super(plugin);
 		columns.put(SCHEDULEDFILEDESTINATION, new UnvTableFieldDef(SCHEDULEDFILEDESTINATION, Types.VARCHAR));
+		columns.put(EMAILRECIPIENTS, new UnvTableFieldDef(EMAILRECIPIENTS, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
 	
@@ -85,12 +87,19 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	public void setValues(int id) throws CMSDBDriverException {
 		writeDebug("In setValues with id: " + id);
 		
-		//Process the CMS query
-		String OutputFile =	processQuery(id);
+		//Retrieve scheduled file destinations if they exist..
+		String OutputFile =	retrieveScheduledFileDestinations(id);
 		
-				
 		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.SCHEDULEDFILEDESTINATION,
 				String.class.getName(), OutputFile);
+		
+		//Retrieve Email Recipients if they exist..
+		String EmailRecipients = retrieveScheduledEmailDestinations(id);
+		
+		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.EMAILRECIPIENTS,
+				String.class.getName(), EmailRecipients);
+		
+		//Write the row
 		addRow(id);
 		
 		writeDebug("Exiting setValues");	
@@ -110,11 +119,11 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	private String processQuery(int id){
+	private String retrieveScheduledFileDestinations(int id){
 		//Initialize Return Variable
 		String OutputFile = "";
 		
-		writeDebug("In processQuery()");
+		writeDebug("In retrieveScheduledFileDestinations()");
 		
 		writeDebug("About to execute CMS query: SELECT SI_NAME, SI_ID, SI_SCHEDULEINFO FROM CI_INFOOBJECTS where si_id = " + id);
 		IInfoObjects infoObjects = pluginBase.getConnection().queryCMS("SELECT SI_NAME, SI_ID, SI_SCHEDULEINFO FROM CI_INFOOBJECTS where si_id = " + id);
@@ -237,8 +246,141 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 			writeDebug("Exiting infoObject iterator");
 		}
 
-		writeDebug("Exiting processQuery()"+"\r\n");
+		writeDebug("Exiting retrieveScheduledFileDestinations()"+"\r\n");
 		return OutputFile;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private String retrieveScheduledEmailDestinations(int id){
+		//Initialize Return Variable
+		String EmailRecipients = "";
+		
+		writeDebug("In retrieveScheduledEmailDestinations()");
+		
+		writeDebug("About to execute CMS query: SELECT SI_NAME, SI_ID, SI_SCHEDULEINFO FROM CI_INFOOBJECTS where si_id = " + id);
+		IInfoObjects infoObjects = pluginBase.getConnection().queryCMS("SELECT SI_NAME, SI_ID, SI_SCHEDULEINFO FROM CI_INFOOBJECTS where si_id = " + id);
+		
+		if (infoObjects == null) {
+			writeDebug("infoObjects query returned null");
+			return EmailRecipients;
+		}
+		
+		int recordCount = infoObjects.size();
+		
+		if (recordCount == 0) {
+			writeDebug("infoObjects query returned 0 records");
+			return EmailRecipients;
+		}
+		else
+			writeDebug("infoObjects query returned " + recordCount + " records");
+		
+		writeDebug("Retrieving infoObject..");
+		Iterator infoObjectsIter = infoObjects.iterator();
+		
+		while (infoObjectsIter.hasNext()) {
+			writeDebug("In infoObject iterator");
+			
+			IInfoObject infoObject = (IInfoObject)infoObjectsIter.next();
+			writeDebug("..infoObject retrieved "+ infoObject.getTitle());
+			
+			writeDebug("Retrieving SchedulingInfo..");
+			ISchedulingInfo sInfo = infoObject.getSchedulingInfo();
+			writeDebug("..SchedulingInfo retrieved");
+			
+			writeDebug("Retrieving Destinations..");
+			IDestinations dests = sInfo.getDestinations();
+			writeDebug(dests.size() +" Destinations retrieved");
+			
+			String pluginType = "CrystalEnterprise.Smtp";
+			Iterator destIter = dests.iterator();
+			
+			IDestination dest=null;
+			while (destIter.hasNext()) {
+				writeDebug("In Destinations iterator");
+				
+				
+				dest = (IDestination) destIter.next();
+				writeDebug("Destination Name: " + dest.getName());
+				if (pluginType.equals(dest.getName()))
+				{
+					writeDebug("Found a destination with type " +pluginType.toString()+" so breaking out of while loop");
+					break;
+				}
+
+				writeDebug("Exiting Destinations iterator without finding destination type "+pluginType.toString());
+			}
+			try {
+				if (dest.getName().equals(pluginType)) {
+					if (dest.getName().equals(pluginType)) {
+						writeDebug("In Processing SMTP destination block");
+						writeDebug("About to query properties");
+						writeDebug("IProperties properties = dest.properties();");
+						IProperties properties = dest.properties();
+						
+						writeDebug("About to get size of properties");
+						writeDebug("Properties size = " + properties.size());
+						
+						writeDebug("About to run IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);");
+						IProperty scheduleOptions = properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS);
+						if ( scheduleOptions== null)
+						{
+							writeDebug("No property with name SI_DEST_SCHEDULEOPTIONS exists");
+							break;
+						}
+						
+						IProperties scheduleOptionsProperties=(IProperties)properties.getProperty(CePropertyID.SI_DEST_SCHEDULEOPTIONS).getValue();
+						if (scheduleOptionsProperties == null)
+						{
+							writeDebug("Couldn't retrieve properties of SI_DEST_SCHEDULEOPTIONS");
+							break;					
+						}
+						
+						//Retrieve SI_MAIL_ADDRESSES property
+						writeDebug("About to execute IProperty mailAddresses = scheduleOptionsProperties.getProperty(SI_MAIL_ADDRESSES);");
+						IProperty mailAddresses = scheduleOptionsProperties.getProperty("SI_MAIL_ADDRESSES");
+						if (mailAddresses == null)
+						{
+							writeDebug("Couldn't retrieve the SI_MAIL_ADDRESSES property");
+							break;
+						}
+						//Retrieve Properties of SI_MAIL_ADDRESSES
+						writeDebug("About to execute IProperties mailAddressesProperties = (IProperties)scheduleOptionsProperties.getProperty(\"SI_MAIL_ADDRESSES\").getValue();");
+						IProperties mailAddressesProperties = (IProperties)scheduleOptionsProperties.getProperty("SI_MAIL_ADDRESSES").getValue();
+						if (mailAddressesProperties == null)
+						{
+							writeDebug("Couldn't retrieve properties of SI_MAIL_ADDRESSES");
+							break;					
+						}
+						
+						//Determine the number of Emails retrieved
+						String numberofEmails = mailAddressesProperties.getProperty("SI_TOTAL").getValue().toString();
+						writeDebug("Number of emails retrieved = "+numberofEmails);
+
+						Integer EmailIterator = (Integer) mailAddressesProperties.getProperty("SI_TOTAL").getValue();
+						for (int i = 1; i <= EmailIterator; i++) {
+							String email = "";
+							email = mailAddressesProperties.getProperty(""+i).getValue().toString();
+							writeDebug("Email address " + i + " = "+email);
+							if (i==1)
+								EmailRecipients = email;
+							else
+								EmailRecipients = EmailRecipients + ";" + email;
+						}
+					}
+				}
+			}
+			catch (Exception e) {
+				writeDebug("In Catch with error: "+e+"\r\n");
+				return EmailRecipients;
+			}
+
+			
+			
+			writeDebug("Exiting infoObject iterator");
+		}
+
+		writeDebug("Exiting retrieveScheduledEmailDestinations()"+"\r\n");
+		return EmailRecipients;
 	}
 }	
 
