@@ -31,7 +31,10 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	private static final String TABLE_NAME = "ComsetExtensions";
 	private static final String SCHEDULEDFILEDESTINATION = "ScheduledFileDestination";
 	private static final String EMAILRECIPIENTS = "EmailRecipients";
-    private final static boolean DEBUGMODE=true;
+	private static final String EMAILRECIPIENTS_BCC = "EmailRecipients_BCC";
+	private static final String EMAILRECIPIENTS_CC = "EmailRecipients_CC";
+
+    private final static boolean DEBUGMODE=false;
     
 	FileWriter fw;
 	final private PluginBase pluginBase;
@@ -45,6 +48,8 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		super(plugin);
 		columns.put(SCHEDULEDFILEDESTINATION, new UnvTableFieldDef(SCHEDULEDFILEDESTINATION, Types.VARCHAR));
 		columns.put(EMAILRECIPIENTS, new UnvTableFieldDef(EMAILRECIPIENTS, Types.VARCHAR));
+		columns.put(EMAILRECIPIENTS_BCC, new UnvTableFieldDef(EMAILRECIPIENTS_BCC, Types.VARCHAR));
+		columns.put(EMAILRECIPIENTS_CC, new UnvTableFieldDef(EMAILRECIPIENTS_CC, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
 	
@@ -94,11 +99,18 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 				String.class.getName(), OutputFile);
 		
 		//Retrieve Email Recipients if they exist..
-		String EmailRecipients = retrieveScheduledEmailDestinations(id);
+		String[] EmailRecipients = retrieveScheduledEmailDestinations(id);
 		
 		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.EMAILRECIPIENTS,
-				String.class.getName(), EmailRecipients);
+				String.class.getName(), EmailRecipients[0]);
+
+		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.EMAILRECIPIENTS_BCC,
+				String.class.getName(), EmailRecipients[1]);
 		
+		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.EMAILRECIPIENTS_CC,
+				String.class.getName(), EmailRecipients[2]);
+
+
 		//Write the row
 		addRow(id);
 		
@@ -251,9 +263,9 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	private String retrieveScheduledEmailDestinations(int id){
+	private String[] retrieveScheduledEmailDestinations(int id){
 		//Initialize Return Variable
-		String EmailRecipients = "";
+		String[] EmailRecipients = {"","",""};
 		
 		writeDebug("In retrieveScheduledEmailDestinations()");
 		
@@ -352,7 +364,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 							break;					
 						}
 						
-						//Determine the number of Emails retrieved
+						//Determine the number of email addresses retrieved
 						String numberofEmails = mailAddressesProperties.getProperty("SI_TOTAL").getValue().toString();
 						writeDebug("Number of emails retrieved = "+numberofEmails);
 
@@ -362,10 +374,75 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 							email = mailAddressesProperties.getProperty(""+i).getValue().toString();
 							writeDebug("Email address " + i + " = "+email);
 							if (i==1)
-								EmailRecipients = email;
+								EmailRecipients[0] = email;
 							else
-								EmailRecipients = EmailRecipients + ";" + email;
+								EmailRecipients[0] = EmailRecipients[0] + ";" + email;
 						}
+						//Retrieve SI_MAIL_BCC property
+						writeDebug("About to execute IProperty bccmailAddresses = scheduleOptionsProperties.getProperty(SI_MAIL_BCC);");
+						IProperty bccmailAddresses = scheduleOptionsProperties.getProperty("SI_MAIL_BCC");
+						if (bccmailAddresses == null)
+						{
+							writeDebug("Couldn't retrieve the SI_MAIL_BCC property");
+							break;
+						}
+						//Retrieve Properties of SI_MAIL_ADDRESSES
+						writeDebug("About to execute IProperties bccmailAddressesProperties = (IProperties)scheduleOptionsProperties.getProperty(\"SI_MAIL_BCC\").getValue();");
+						IProperties bccmailAddressesProperties = (IProperties)scheduleOptionsProperties.getProperty("SI_MAIL_BCC").getValue();
+						if (bccmailAddressesProperties == null)
+						{
+							writeDebug("Couldn't retrieve properties of SI_MAIL_BCC");
+							break;					
+						}
+						
+						//Determine the number of email addresses retrieved
+						String numberofbccEmails = bccmailAddressesProperties.getProperty("SI_TOTAL").getValue().toString();
+						writeDebug("Number of bcc emails retrieved = "+numberofbccEmails);
+
+						Integer bccEmailIterator = (Integer) bccmailAddressesProperties.getProperty("SI_TOTAL").getValue();
+						for (int i = 1; i <= bccEmailIterator; i++) {
+							String email = "";
+							email = bccmailAddressesProperties.getProperty(""+i).getValue().toString();
+							writeDebug("BCC Email address " + i + " = "+email);
+							if (i==1)
+								EmailRecipients[1] = email;
+							else
+								EmailRecipients[1] = EmailRecipients[1] + ";" + email;
+						}
+
+						
+						//Retrieve SI_MAIL_CC property
+						writeDebug("About to execute IProperty bccmailAddresses = scheduleOptionsProperties.getProperty(SI_MAIL_CC);");
+						IProperty ccmailAddresses = scheduleOptionsProperties.getProperty("SI_MAIL_CC");
+						if (ccmailAddresses == null)
+						{
+							writeDebug("Couldn't retrieve the SI_MAIL_CC property");
+							break;
+						}
+						//Retrieve Properties of SI_MAIL_ADDRESSES
+						writeDebug("About to execute IProperties bccmailAddressesProperties = (IProperties)scheduleOptionsProperties.getProperty(\"SI_MAIL_CC\").getValue();");
+						IProperties ccmailAddressesProperties = (IProperties)scheduleOptionsProperties.getProperty("SI_MAIL_CC").getValue();
+						if (ccmailAddressesProperties == null)
+						{
+							writeDebug("Couldn't retrieve properties of SI_MAIL_CC");
+							break;					
+						}
+						
+						//Determine the number of email addresses retrieved
+						String numberofccEmails = ccmailAddressesProperties.getProperty("SI_TOTAL").getValue().toString();
+						writeDebug("Number of cc emails retrieved = "+numberofccEmails);
+
+						Integer ccEmailIterator = (Integer) ccmailAddressesProperties.getProperty("SI_TOTAL").getValue();
+						for (int i = 1; i <= ccEmailIterator; i++) {
+							String email = "";
+							email = ccmailAddressesProperties.getProperty(""+i).getValue().toString();
+							writeDebug("CC Email address " + i + " = "+email);
+							if (i==1)
+								EmailRecipients[2] = email;
+							else
+								EmailRecipients[2] = EmailRecipients[2] + ";" + email;
+						}
+
 					}
 				}
 			}
@@ -373,12 +450,8 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 				writeDebug("In Catch with error: "+e+"\r\n");
 				return EmailRecipients;
 			}
-
-			
-			
 			writeDebug("Exiting infoObject iterator");
 		}
-
 		writeDebug("Exiting retrieveScheduledEmailDestinations()"+"\r\n");
 		return EmailRecipients;
 	}
