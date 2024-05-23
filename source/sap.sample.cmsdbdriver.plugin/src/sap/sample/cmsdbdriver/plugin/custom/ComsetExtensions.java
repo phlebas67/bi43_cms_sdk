@@ -33,6 +33,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	private static final String EMAILRECIPIENTS = "EmailRecipients";
 	private static final String EMAILRECIPIENTS_BCC = "EmailRecipients_BCC";
 	private static final String EMAILRECIPIENTS_CC = "EmailRecipients_CC";
+	private static final String ISFHSQL = "IsFHSQL?";
 
     private final static boolean DEBUGMODE=false;
     
@@ -50,6 +51,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		columns.put(EMAILRECIPIENTS, new UnvTableFieldDef(EMAILRECIPIENTS, Types.VARCHAR));
 		columns.put(EMAILRECIPIENTS_BCC, new UnvTableFieldDef(EMAILRECIPIENTS_BCC, Types.VARCHAR));
 		columns.put(EMAILRECIPIENTS_CC, new UnvTableFieldDef(EMAILRECIPIENTS_CC, Types.VARCHAR));
+		columns.put(ISFHSQL, new UnvTableFieldDef(ISFHSQL, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
 	
@@ -109,7 +111,12 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		
 		setObjectProperty(TABLE_NAME + "." + ComsetExtensions.EMAILRECIPIENTS_CC,
 				String.class.getName(), EmailRecipients[2]);
-
+		
+		//Check if a FHSQL data-provider
+		if (isFHSQL(id))
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ISFHSQL,String.class.getName(), "True");			
+		else
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ISFHSQL,String.class.getName(), "False");
 
 		//Write the row
 		addRow(id);
@@ -454,6 +461,29 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		}
 		writeDebug("Exiting retrieveScheduledEmailDestinations()"+"\r\n");
 		return EmailRecipients;
+	}
+	
+	private Boolean isFHSQL(int id){
+		
+		writeDebug("In isFHSQL()");
+		
+		writeDebug("About to execute CMS query: select SI_ID from CI_INFOOBJECTS where SI_KIND = 'Webi' and SI_FHSQL_RELATIONAL_CONNECTION.SI_TOTAL > 0 and SI_ID = " + id);
+		IInfoObjects infoObjects = pluginBase.getConnection().queryCMS("SELECT SI_ID from CI_INFOOBJECTS where SI_KIND = 'Webi' and SI_FHSQL_RELATIONAL_CONNECTION.SI_TOTAL > 0 and SI_ID = " + id);
+		
+		if (infoObjects == null) {
+			writeDebug("infoObjects query returned null");
+			return false;
+		}
+		
+		int recordCount = infoObjects.size();
+		
+		if (recordCount == 0) {
+			writeDebug("infoObjects query returned 0 records");
+			return false;
+		}
+		
+		writeDebug("infoObjects query returned " + recordCount + " records");
+		return true;
 	}
 }	
 
