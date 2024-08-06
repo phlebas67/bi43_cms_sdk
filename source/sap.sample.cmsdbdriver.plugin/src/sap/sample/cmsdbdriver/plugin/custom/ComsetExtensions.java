@@ -34,6 +34,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	private static final String EMAILRECIPIENTS_BCC = "EmailRecipients_BCC";
 	private static final String EMAILRECIPIENTS_CC = "EmailRecipients_CC";
 	private static final String ISFHSQL = "IsFHSQL?";
+	private static final String USERENABLED = "UserEnabled?";
 
     private final static boolean DEBUGMODE=false;
     
@@ -52,6 +53,7 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		columns.put(EMAILRECIPIENTS_BCC, new UnvTableFieldDef(EMAILRECIPIENTS_BCC, Types.VARCHAR));
 		columns.put(EMAILRECIPIENTS_CC, new UnvTableFieldDef(EMAILRECIPIENTS_CC, Types.VARCHAR));
 		columns.put(ISFHSQL, new UnvTableFieldDef(ISFHSQL, Types.VARCHAR));
+		columns.put(USERENABLED, new UnvTableFieldDef(USERENABLED, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
 	
@@ -118,6 +120,12 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		else
 			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ISFHSQL,String.class.getName(), "False");
 
+		//Retrieve UserEnabled flag
+		if (isUserEnabled(id))
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.USERENABLED,String.class.getName(), "True");			
+		else
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.USERENABLED,String.class.getName(), "False");
+		
 		//Write the row
 		addRow(id);
 		
@@ -469,6 +477,29 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		
 		writeDebug("About to execute CMS query: select SI_ID from CI_INFOOBJECTS where SI_KIND = 'Webi' and SI_FHSQL_RELATIONAL_CONNECTION.SI_TOTAL > 0 and SI_ID = " + id);
 		IInfoObjects infoObjects = pluginBase.getConnection().queryCMS("SELECT SI_ID from CI_INFOOBJECTS where SI_KIND = 'Webi' and SI_FHSQL_RELATIONAL_CONNECTION.SI_TOTAL > 0 and SI_ID = " + id);
+		
+		if (infoObjects == null) {
+			writeDebug("infoObjects query returned null");
+			return false;
+		}
+		
+		int recordCount = infoObjects.size();
+		
+		if (recordCount == 0) {
+			writeDebug("infoObjects query returned 0 records");
+			return false;
+		}
+		
+		writeDebug("infoObjects query returned " + recordCount + " records");
+		return true;
+	}
+	
+	private Boolean isUserEnabled(int id){
+		
+		writeDebug("In isUserEnabled()");
+		
+		writeDebug("About to execute CMS query: SELECT SI_ID, SI_NAME From CI_SYSTEMOBJECTS Where SI_KIND='user' and 'SI_ALIASES.1.SI_DISABLED'=0 and SI_ID = " + id);
+		IInfoObjects infoObjects = pluginBase.getConnection().queryCMS("SELECT SI_ID, SI_NAME From CI_SYSTEMOBJECTS Where SI_KIND='user' and 'SI_ALIASES.1.SI_DISABLED'=0 and SI_ID = " + id);
 		
 		if (infoObjects == null) {
 			writeDebug("infoObjects query returned null");
