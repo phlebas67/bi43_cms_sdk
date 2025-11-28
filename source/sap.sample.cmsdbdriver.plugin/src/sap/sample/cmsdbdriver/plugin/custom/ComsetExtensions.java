@@ -25,6 +25,9 @@ import sap.sample.cmsdbdriver.plugin.core.IResultPlugin;
 import sap.sample.cmsdbdriver.plugin.core.IResultTable;
 import sap.sample.cmsdbdriver.plugin.core.PluginBase;
 
+import com.crystaldecisions.sdk.plugin.desktop.user.IUser;
+import com.crystaldecisions.sdk.plugin.desktop.user.IUserAlias;
+
 
 public class ComsetExtensions extends IResultTable implements IUnvTable {
 
@@ -34,7 +37,12 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	private static final String EMAILRECIPIENTS_BCC = "EmailRecipients_BCC";
 	private static final String EMAILRECIPIENTS_CC = "EmailRecipients_CC";
 	private static final String ISFHSQL = "IsFHSQL?";
-	private static final String USERENABLED = "UserEnabled?";
+	private static final String ALIASENABLED_ENTERPRISE = "secEnterpriseAliasEnabled?";
+	private static final String SEC_ENTERPRISE = "secEnterprise";
+	private static final String ALIASENABLED_LDAP = "secLDAPAliasEnabled?";
+	private static final String SEC_LDAP = "secLDAP";
+	private static final String ALIASENABLED_WINAD = "secWinADAliasEnabled?";
+	private static final String SEC_WINAD = "secWinAD";
 
     private final static boolean DEBUGMODE=false;
     
@@ -53,7 +61,9 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		columns.put(EMAILRECIPIENTS_BCC, new UnvTableFieldDef(EMAILRECIPIENTS_BCC, Types.VARCHAR));
 		columns.put(EMAILRECIPIENTS_CC, new UnvTableFieldDef(EMAILRECIPIENTS_CC, Types.VARCHAR));
 		columns.put(ISFHSQL, new UnvTableFieldDef(ISFHSQL, Types.VARCHAR));
-		columns.put(USERENABLED, new UnvTableFieldDef(USERENABLED, Types.VARCHAR));
+		columns.put(ALIASENABLED_ENTERPRISE, new UnvTableFieldDef(ALIASENABLED_ENTERPRISE, Types.VARCHAR));
+		columns.put(ALIASENABLED_LDAP, new UnvTableFieldDef(ALIASENABLED_LDAP, Types.VARCHAR));
+		columns.put(ALIASENABLED_WINAD, new UnvTableFieldDef(ALIASENABLED_WINAD, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
 	
@@ -120,12 +130,22 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		else
 			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ISFHSQL,String.class.getName(), "False");
 
-		//Retrieve UserEnabled flag
-		if (isUserEnabled(id))
-			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.USERENABLED,String.class.getName(), "True");			
+		//Retrieve secEnterpriseAliasrEnabled flag
+		if (isUserEnabled(id,SEC_ENTERPRISE))
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_ENTERPRISE,String.class.getName(), "True");			
 		else
-			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.USERENABLED,String.class.getName(), "False");
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_ENTERPRISE,String.class.getName(), "False");
 		
+		if (isUserEnabled(id,SEC_LDAP))
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_LDAP,String.class.getName(), "True");			
+		else
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_LDAP,String.class.getName(), "False");
+		
+		if (isUserEnabled(id,SEC_WINAD))
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_WINAD,String.class.getName(), "True");			
+		else
+			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_WINAD,String.class.getName(), "False");
+
 		//Write the row
 		addRow(id);
 		
@@ -494,27 +514,107 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		return true;
 	}
 	
-	private Boolean isUserEnabled(int id){
+	private Boolean isUserEnabled(int id, String secAliasType){
+		
+		Boolean aliasEnabled = false;
+
 		
 		writeDebug("In isUserEnabled()");
 		
-		writeDebug("About to execute CMS query: SELECT SI_ID, SI_NAME From CI_SYSTEMOBJECTS Where SI_KIND='user' and 'SI_ALIASES.1.SI_DISABLED'=0 and SI_ID = " + id);
-		IInfoObjects infoObjects = pluginBase.getConnection().queryCMS("SELECT SI_ID, SI_NAME From CI_SYSTEMOBJECTS Where SI_KIND='user' and 'SI_ALIASES.1.SI_DISABLED'=0 and SI_ID = " + id);
+		writeDebug("About to execute CMS query: SELECT SI_ID, SI_NAME, SI_Aliases From CI_SYSTEMOBJECTS Where SI_KIND='user' and SI_ID = " + id);
+		IInfoObjects userCollection = pluginBase.getConnection().queryCMS("SELECT SI_ID, SI_NAME, SI_Aliases From CI_SYSTEMOBJECTS Where SI_KIND='user' and SI_ID = " + id);
 		
-		if (infoObjects == null) {
-			writeDebug("infoObjects query returned null");
+		if (userCollection == null) {
+			writeDebug("userCollection query returned null");
 			return false;
 		}
 		
-		int recordCount = infoObjects.size();
+		int recordCount = userCollection.size();
 		
 		if (recordCount == 0) {
-			writeDebug("infoObjects query returned 0 records");
+			writeDebug("userCollection query returned 0 records");
 			return false;
 		}
 		
-		writeDebug("infoObjects query returned " + recordCount + " records");
-		return true;
+		writeDebug("userCollection query returned " + recordCount + " records");
+		
+		writeDebug("About to instantiate userIterator");
+		@SuppressWarnings("rawtypes")
+		Iterator userIterator = userCollection.iterator();
+		
+		//Iterate through list of users
+		while (userIterator.hasNext()) {
+			writeDebug("About to instantiate user object");
+			IUser user = (IUser) userIterator.next();
+			
+			// Retrieve UserName
+			String username = user.getTitle();
+			writeDebug("Retrieved information for userID " + id + ", Name= "+username);
+			
+			//Retrieve list of aliases
+			writeDebug("Retrieving user aliases");
+			@SuppressWarnings("rawtypes")
+			Iterator aliasIterator = user.getAliases().iterator();
+			Boolean specifiedAliasTypeFound = false;
+			
+			while (aliasIterator.hasNext()) {
+				writeDebug("Retrieving alias");
+				IUserAlias userAlias = (IUserAlias) aliasIterator.next();
+				
+				//Retrieve Alias Name
+				writeDebug("Retrieving Alias Details");
+				String aliasName=userAlias.getName();
+				Integer aliasType=userAlias.getType();
+				Boolean aliasDisabled=userAlias.isDisabled();
+				writeDebug("Alias Name:"+aliasName);
+				writeDebug("Alias Type:"+aliasType);
+				writeDebug("Alias Disabled?:"+aliasDisabled);
+				
+				// Test to see if the retrieved alias is the required type
+				writeDebug("Testing Alias Type");
+				
+				if (secAliasType == SEC_ENTERPRISE) {
+					writeDebug("Testing for "+SEC_ENTERPRISE);
+					if (aliasType == IUserAlias.ENTERPRISE) {
+						specifiedAliasTypeFound = true;
+						writeDebug(SEC_ENTERPRISE+" alias found");
+					}
+				}
+				else if (secAliasType == SEC_LDAP) {
+					writeDebug("Testing for "+SEC_LDAP);
+					if (aliasType == IUserAlias.THIRD_PARTY && aliasName.contains(SEC_LDAP)) {
+						specifiedAliasTypeFound = true;
+						writeDebug(SEC_LDAP+" alias found");
+					}
+				}
+				else if (secAliasType == SEC_WINAD) {
+					writeDebug("Testing for "+SEC_WINAD);
+					if (aliasType == IUserAlias.THIRD_PARTY && aliasName.contains(SEC_WINAD)) {
+						specifiedAliasTypeFound = true;
+						writeDebug(SEC_WINAD+" alias found");
+					}
+				}
+				
+				//If Alias has been found, test to see if the Alias is enabled
+				if (specifiedAliasTypeFound) {
+					writeDebug("Testing to see if alias is enabled");
+					if (aliasDisabled) {
+						writeDebug("Alias is disabled");
+						aliasEnabled = false;
+					}
+					else {
+						writeDebug("Alias is enabled");
+						aliasEnabled = true;
+					}
+					writeDebug("Exiting function");
+					return aliasEnabled;
+				}
+				
+			}
+				
+		}
+		
+		return aliasEnabled;
 	}
 }	
 
