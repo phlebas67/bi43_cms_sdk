@@ -39,8 +39,6 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 	private static final String ISFHSQL = "IsFHSQL?";
 	private static final String ALIASENABLED_ENTERPRISE = "secEnterpriseAliasEnabled?";
 	private static final String SEC_ENTERPRISE = "secEnterprise";
-	private static final String ALIASENABLED_LDAP = "secLDAPAliasEnabled?";
-	private static final String SEC_LDAP = "secLDAP";
 	private static final String ALIASENABLED_WINAD = "secWinADAliasEnabled?";
 	private static final String SEC_WINAD = "secWinAD";
 
@@ -62,7 +60,6 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 		columns.put(EMAILRECIPIENTS_CC, new UnvTableFieldDef(EMAILRECIPIENTS_CC, Types.VARCHAR));
 		columns.put(ISFHSQL, new UnvTableFieldDef(ISFHSQL, Types.VARCHAR));
 		columns.put(ALIASENABLED_ENTERPRISE, new UnvTableFieldDef(ALIASENABLED_ENTERPRISE, Types.VARCHAR));
-		columns.put(ALIASENABLED_LDAP, new UnvTableFieldDef(ALIASENABLED_LDAP, Types.VARCHAR));
 		columns.put(ALIASENABLED_WINAD, new UnvTableFieldDef(ALIASENABLED_WINAD, Types.VARCHAR));
 		pluginBase = (PluginBase)plugin;
 	}
@@ -135,11 +132,6 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_ENTERPRISE,String.class.getName(), "True");			
 		else
 			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_ENTERPRISE,String.class.getName(), "False");
-		
-		if (isUserEnabled(id,SEC_LDAP))
-			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_LDAP,String.class.getName(), "True");			
-		else
-			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_LDAP,String.class.getName(), "False");
 		
 		if (isUserEnabled(id,SEC_WINAD))
 			setObjectProperty(TABLE_NAME + "." + ComsetExtensions.ALIASENABLED_WINAD,String.class.getName(), "True");			
@@ -578,13 +570,6 @@ public class ComsetExtensions extends IResultTable implements IUnvTable {
 					if (aliasType == IUserAlias.ENTERPRISE) {
 						specifiedAliasTypeFound = true;
 						writeDebug(SEC_ENTERPRISE+" alias found");
-					}
-				}
-				else if (secAliasType == SEC_LDAP) {
-					writeDebug("Testing for "+SEC_LDAP);
-					if (aliasType == IUserAlias.THIRD_PARTY && aliasName.contains(SEC_LDAP)) {
-						specifiedAliasTypeFound = true;
-						writeDebug(SEC_LDAP+" alias found");
 					}
 				}
 				else if (secAliasType == SEC_WINAD) {
